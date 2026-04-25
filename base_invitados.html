@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel Invitados{% endblock %} — FC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg: #050a0e;
+            --surface: #0d1117;
+            --border: #1e2a35;
+            --verde: #00ff88;
+            --rojo: #ff3355;
+            --amarillo: #ffd700;
+            --azul: #00aaff;
+            --texto: #c9d1d9;
+            --texto-dim: #586069;
+            --font: 'Space Mono', 'Courier New', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--texto);
+            font-family: var(--font);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        a { color: var(--azul); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Terminal-style header */
+        .fe-header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            height: 48px;
+            gap: 16px;
+        }
+        .fe-header .prompt {
+            color: var(--verde);
+            font-weight: 700;
+        }
+        .fe-header .path { color: var(--azul); }
+        .fe-header .title { color: var(--texto-dim); flex: 1; }
+        .fe-header .nav { display: flex; gap: 16px; }
+        .fe-header .nav a { color: var(--texto-dim); font-size: 0.85em; }
+        .fe-header .nav a:hover { color: var(--texto); }
+        .fe-header .nav a.active { color: var(--verde); }
+
+        /* Tab bar */
+        .tab-bar {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            background: var(--surface);
+        }
+        .tab {
+            padding: 10px 16px;
+            font-size: 0.82em;
+            color: var(--texto-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            text-decoration: none;
+        }
+        .tab:hover { color: var(--texto); text-decoration: none; }
+        .tab.activo { color: var(--verde); border-bottom-color: var(--verde); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-family: var(--font);
+            font-size: 0.82em;
+            cursor: pointer;
+            border: 1px solid;
+            background: transparent;
+            transition: all 0.1s;
+            letter-spacing: 0.05em;
+        }
+        .btn-verde { color: var(--verde); border-color: var(--verde); }
+        .btn-verde:hover { background: var(--verde); color: var(--bg); }
+        .btn-rojo { color: var(--rojo); border-color: var(--rojo); }
+        .btn-rojo:hover { background: var(--rojo); color: #fff; }
+        .btn-dim { color: var(--texto-dim); border-color: var(--border); }
+        .btn-dim:hover { color: var(--texto); border-color: var(--texto-dim); }
+
+        .badge {
+            display: inline-block;
+            padding: 1px 7px;
+            font-size: 0.75em;
+            border: 1px solid;
+            border-radius: 0;
+        }
+        .badge-pendiente { color: var(--amarillo); border-color: var(--amarillo); }
+        .badge-aceptado { color: var(--verde); border-color: var(--verde); }
+        .badge-rechazado { color: var(--rojo); border-color: var(--rojo); }
+        .badge-lista_espera { color: var(--azul); border-color: var(--azul); }
+        .badge-activa { color: var(--verde); border-color: var(--verde); }
+        .badge-llena { color: var(--amarillo); border-color: var(--amarillo); }
+        .badge-cancelada { color: var(--rojo); border-color: var(--rojo); }
+
+        .messages { padding: 8px 24px; }
+        .message { padding: 8px 12px; margin-bottom: 4px; font-size: 0.82em; border-left: 2px solid; }
+        .message.success { border-color: var(--verde); color: var(--verde); }
+        .message.error { border-color: var(--rojo); color: var(--rojo); }
+        .message.warning { border-color: var(--amarillo); color: var(--amarillo); }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border: 2px solid var(--border);
+            border-top-color: var(--verde);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <header class="fe-header">
+        <span class="prompt">❯</span>
+        <span class="path">~/fiestas/invitados</span>
+        <span class="title">// Frontend 1 — Gestión de Invitados</span>
+        <nav class="nav">
+            <a href="{% url 'fiestas:home' %}">← Main</a>
+            <a href="{% url 'invitados:panel' %}" class="{% block nav_panel %}{% endblock %}">Panel</a>
+            <a href="{% url 'localizador:mapa' %}">Localizador</a>
+        </nav>
+    </header>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

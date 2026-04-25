@@ -1,0 +1,1 @@
+cd /home/claude/fiestas-clandestinas && python3 -m venv venv && venv/bin/pip install django==4.2 --quiet && echo "Django installed: $(venv/bin/python -m django --version)"
