@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Gestionar — {{ fiesta.nombre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .gestionar-layout { display: grid; grid-template-columns: 1fr 300px; min-height: 100vh; }
+    .gestionar-main { border-right: 1px solid #1a1a1a; }
+    .gestionar-sidebar { padding: 28px; background: #050505; }
+    .page-header {
+        padding: 32px 36px 24px;
+        border-bottom: 1px solid #1a1a1a;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+    .page-header h1 { font-family: Georgia, serif; font-size: 1.8rem; line-height: 1.1; }
+    .page-header .sub { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; }
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid #1a1a1a;
+        padding: 0 36px;
+    }
+    .tab {
+        padding: 14px 0;
+        margin-right: 28px;
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #555;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .tab.active { color: var(--blanco); border-bottom-color: var(--rojo); }
+    .tab-count {
+        display: inline-block;
+        margin-left: 6px;
+        background: #222;
+        padding: 1px 6px;
+        font-size: 0.65rem;
+        color: #888;
+    }
+    .tab-count.has-items { background: var(--rojo); color: var(--blanco); }
+    .invitados-section { padding: 0 36px; display: none; }
+    .invitados-section.active { display: block; }
+    .invitado-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #111;
+        gap: 12px;
+    }
+    .invitado-info { flex: 1; }
+    .invitado-nombre { font-size: 0.9rem; margin-bottom: 2px; }
+    .invitado-meta { font-size: 0.72rem; color: #555; }
+    .invitado-acciones { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-sm { padding: 6px 12px; font-size: 0.7rem; }
+    .empty-tab { padding: 40px 0; text-align: center; color: #444; font-size: 0.85rem; }
+    .sidebar-fiesta h2 { font-family: Georgia, serif; font-size: 1.1rem; margin-bottom: 4px; }
+    .sidebar-fiesta .ciudad { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 20px; }
+    .sidebar-stat { margin-bottom: 20px; }
+    .sidebar-stat label { display: block; font-size: 0.68rem; color: #555; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; }
+    .sidebar-stat .val { font-family: Georgia, serif; font-size: 1.8rem; }
+    .cupo-barra { height: 3px; background: #1a1a1a; margin: 8px 0; }
+    .cupo-fill { height: 100%; background: var(--rojo); }
+    .invitado-notas { font-size: 0.72rem; color: #666; font-style: italic; margin-top: 2px; }
+    @media (max-width: 768px) { .gestionar-layout { grid-template-columns: 1fr; } .gestionar-sidebar { display: none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gestionar-layout">
+    <div class="gestionar-main">
+        <div class="page-header">
+            <div>
+                <div class="sub">Gestión de invitados</div>
+                <h1>{{ fiesta.nombre }}</h1>
+            </div>
+            <a href="{% url 'invitados:panel' %}" style="font-size:0.75rem;color:#555;">← Volver al panel</a>
+        </div>
+
+        <!-- TABS -->
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('pendientes')">
+                Pendientes
+                <span class="tab-count {% if pendientes %}has-items{% endif %}">{{ pendientes|length }}</span>
+            </div>
+            <div class="tab" onclick="showTab('aceptados')">
+                Aceptados
+                <span class="tab-count">{{ aceptados|length }}</span>
+            </div>
+            <div class="tab" onclick="showTab('rechazados')">
+                Rechazados
+                <span class="tab-count">{{ rechazados|length }}</span>
+            </div>
+            {% if lista_espera %}
+            <div class="tab" onclick="showTab('espera')">
+                En espera
+                <span class="tab-count">{{ lista_espera|length }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- PENDIENTES -->
+        <div id="tab-pendientes" class="invitados-section active" style="padding-top:8px;">
+            {% for inv in pendientes %}
+            <div class="invitado-row" id="row-{{ inv.id }}">
+                <div class="invitado-info">
+                    <div class="invitado-nombre">
+                        {{ inv.nombre }}
+                        {% if inv.alias %}<small style="color:#555;">({{ inv.alias }})</small>{% endif %}
+                    </div>
+                    <div class="invitado-meta">
+                        {% if inv.contacto %}{{ inv.contacto }} · {% endif %}
+                        Solicitó el {{ inv.solicitado_en|date:"d/m/Y H:i" }}
+                    </div>
+                    {% if inv.notas %}<div class="invitado-notas">"{{ inv.notas }}"</div>{% endif %}
+                </div>
+                <div class="invitado-acciones">
+                    <form method="post" action="{% url 'invitados:aceptar' inv.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button class="btn btn-verde btn-sm" type="submit">✓ Aceptar</button>
+                    </form>
+                    <form method="post" action="{% url 'invitados:rechazar' inv.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button class="btn btn-rojo btn-sm" type="submit">✗ Rechazar</button>
+                    </form>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-tab">No hay solicitudes pendientes.</div>
+            {% endfor %}
+        </div>
+
+        <!-- ACEPTADOS -->
+        <div id="tab-aceptados" class="invitados-section" style="padding-top:8px;">
+            {% for inv in aceptados %}
+            <div class="invitado-row">
+                <div class="invitado-info">
+                    <div class="invitado-nombre">
+                        {{ inv.nombre }}
+                        {% if inv.alias %}<small style="color:#555;">({{ inv.alias }})</small>{% endif %}
+                    </div>
+                    <div class="invitado-meta">
+                        {% if inv.contacto %}{{ inv.contacto }}{% endif %}
+                    </div>
+                </div>
+                <span class="badge badge-activa">Aceptado ✓</span>
+            </div>
+            {% empty %}
+            <div class="empty-tab">Nadie aceptado aún.</div>
+            {% endfor %}
+        </div>
+
+        <!-- RECHAZADOS -->
+        <div id="tab-rechazados" class="invitados-section" style="padding-top:8px;">
+            {% for inv in rechazados %}
+            <div class="invitado-row">
+                <div class="invitado-info">
+                    <div class="invitado-nombre">{{ inv.nombre }}</div>
+                    <div class="invitado-meta">{% if inv.contacto %}{{ inv.contacto }}{% endif %}</div>
+                </div>
+                <span class="badge badge-cancelada">Rechazado</span>
+            </div>
+            {% empty %}
+            <div class="empty-tab">Nadie rechazado.</div>
+            {% endfor %}
+        </div>
+
+        <!-- LISTA DE ESPERA -->
+        {% if lista_espera %}
+        <div id="tab-espera" class="invitados-section" style="padding-top:8px;">
+            {% for inv in lista_espera %}
+            <div class="invitado-row">
+                <div class="invitado-info">
+                    <div class="invitado-nombre">{{ inv.nombre }}</div>
+                    <div class="invitado-meta">{% if inv.contacto %}{{ inv.contacto }}{% endif %}</div>
+                </div>
+                <div class="invitado-acciones">
+                    <form method="post" action="{% url 'invitados:aceptar' inv.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button class="btn btn-verde btn-sm" type="submit">✓ Aceptar</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="gestionar-sidebar">
+        <div class="sidebar-fiesta">
+            <h2>{{ fiesta.nombre }}</h2>
+            <div class="ciudad">{{ fiesta.ciudad }} · {{ fiesta.get_tipo_lugar_display }}</div>
+
+            <div class="sidebar-stat">
+                <label>Cupos disponibles</label>
+                <div class="val" style="color:{% if fiesta.cupos_disponibles > 0 %}#39d353{% else %}var(--rojo){% endif %};">
+                    {{ fiesta.cupos_disponibles }}
+                </div>
+                <div class="cupo-barra">
+                    <div class="cupo-fill" style="width:{% widthratio fiesta.invitados_aceptados fiesta.capacidad_maxima 100 %}%"></div>
+                </div>
+                <div style="font-size:0.72rem;color:#555;">{{ fiesta.invitados_aceptados }} / {{ fiesta.capacidad_maxima }} aceptados</div>
+            </div>
+
+            <div class="sidebar-stat">
+                <label>Estado</label>
+                <span class="badge badge-{{ fiesta.estado }}">{{ fiesta.get_estado_display }}</span>
+            </div>
+
+            <div class="sidebar-stat">
+                <label>Fecha</label>
+                <div style="font-size:0.85rem;">{{ fiesta.fecha_hora|date:"d M Y, H:i" }}</div>
+            </div>
+
+            <div style="margin-top:24px;padding-top:24px;border-top:1px solid #111;">
+                <a href="{% url 'invitados:formulario_solicitud' fiesta.pk %}" class="btn btn-amarillo" style="width:100%;display:block;text-align:center;font-size:0.75rem;padding:10px;">
+                    + Agregar Solicitud
+                </a>
+                <a href="{% url 'fiestas:detalle' fiesta.pk %}" style="display:block;text-align:center;font-size:0.72rem;color:#555;margin-top:12px;">
+                    Ver fiesta completa →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+function showTab(name) {
+    document.querySelectorAll('.invitados-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+}
+</script>
+{% endblock %}
+{% endblock %}

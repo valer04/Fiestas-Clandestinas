@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Solicitar Invitación — {{ fiesta.nombre }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .solicitud-wrap {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 60px 24px 80px;
+    }
+    .solicitud-wrap .eyebrow {
+        font-size: 0.7rem;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--rojo);
+        margin-bottom: 12px;
+    }
+    .solicitud-wrap h1 {
+        font-family: Georgia, serif;
+        font-size: 2.4rem;
+        line-height: 1.05;
+        margin-bottom: 8px;
+    }
+    .solicitud-wrap .nombre-fiesta {
+        font-family: Georgia, serif;
+        font-size: 1rem;
+        color: #777;
+        margin-bottom: 36px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #1a1a1a;
+    }
+    .field {
+        margin-bottom: 20px;
+    }
+    .field label {
+        display: block;
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #666;
+        margin-bottom: 8px;
+    }
+    .field .required { color: var(--rojo); }
+    .form-input {
+        width: 100%;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        color: var(--blanco);
+        padding: 12px 14px;
+        font-family: var(--font-cuerpo);
+        font-size: 0.88rem;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .form-input:focus { border-color: var(--rojo); }
+    .fiesta-info-box {
+        background: #0d0d0d;
+        border: 1px solid #1a1a1a;
+        border-left: 3px solid var(--rojo);
+        padding: 16px 18px;
+        margin-bottom: 32px;
+        font-size: 0.8rem;
+        line-height: 1.9;
+        color: #888;
+    }
+    .fiesta-info-box strong { color: var(--blanco); }
+    .submit-row { display: flex; gap: 12px; align-items: center; margin-top: 28px; }
+    .hint { font-size: 0.72rem; color: #444; margin-top: 6px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="solicitud-wrap">
+    <div class="eyebrow">Solicitar acceso</div>
+    <h1>Pedir<br>Invitación</h1>
+    <div class="nombre-fiesta">→ {{ fiesta.nombre }}</div>
+
+    <div class="fiesta-info-box">
+        <strong>📅</strong> {{ fiesta.fecha_hora|date:"d M Y, H:i" }}<br>
+        <strong>📍</strong> {{ fiesta.ciudad }}, {{ fiesta.departamento }}
+        {% if fiesta.es_publica %} — {{ fiesta.direccion }}{% else %} — Ubicación privada (se revela al ser aceptado){% endif %}<br>
+        <strong>👤</strong> Organiza: {{ fiesta.organizador }}<br>
+        <strong>🎟</strong> {{ fiesta.cupos_disponibles }} cupos disponibles de {{ fiesta.capacidad_maxima }}
+    </div>
+
+    <form method="post" action="{% url 'invitados:formulario_solicitud' fiesta.pk %}">
+        {% csrf_token %}
+
+        <div class="field">
+            <label>Nombre completo <span class="required">*</span></label>
+            <input class="form-input" type="text" name="nombre"
+                placeholder="Tu nombre real" required>
+        </div>
+
+        <div class="field">
+            <label>Alias / apodo</label>
+            <input class="form-input" type="text" name="alias"
+                placeholder="El Fantasma, La Sombra...">
+        </div>
+
+        <div class="field">
+            <label>Contacto <span class="required">*</span></label>
+            <input class="form-input" type="text" name="contacto"
+                placeholder="@telegram o número de WhatsApp" required>
+            <div class="hint">Para enviarte confirmación o el código de ubicación.</div>
+        </div>
+
+        <div class="field">
+            <label>Mensaje al organizador</label>
+            <textarea class="form-input" name="notas" rows="3"
+                placeholder="¿Por qué deberían invitarte? ¿Quién te refirió?"></textarea>
+        </div>
+
+        <div class="submit-row">
+            <button type="submit" class="btn btn-rojo" style="padding:13px 28px;font-size:0.88rem;">
+                Enviar Solicitud →
+            </button>
+            <a href="{% url 'fiestas:detalle' fiesta.pk %}" style="color:#555;font-size:0.8rem;">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

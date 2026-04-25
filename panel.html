@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Panel de Invitados{% endblock %}
+
+{% block extra_head %}
+<style>
+    .panel-header {
+        padding: 48px 40px 32px;
+        border-bottom: 1px solid #1a1a1a;
+    }
+    .panel-header h1 {
+        font-family: Georgia, serif;
+        font-size: 2.5rem;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+    .panel-header p { color: #555; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; }
+    .fiestas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1px;
+        background: #1a1a1a;
+    }
+    .fiesta-card {
+        background: var(--negro);
+        padding: 28px;
+        transition: background 0.2s;
+    }
+    .fiesta-card:hover { background: #0d0d0d; }
+    .fiesta-card .encabezado {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+    }
+    .fiesta-card h2 {
+        font-family: Georgia, serif;
+        font-size: 1.15rem;
+        line-height: 1.2;
+        flex: 1;
+    }
+    .contador-pendientes {
+        background: var(--rojo);
+        color: var(--blanco);
+        font-size: 0.7rem;
+        font-weight: bold;
+        padding: 3px 8px;
+        min-width: 24px;
+        text-align: center;
+        flex-shrink: 0;
+        margin-left: 12px;
+    }
+    .fiesta-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin: 16px 0;
+    }
+    .stat-mini {
+        text-align: center;
+        padding: 10px 6px;
+        background: #0f0f0f;
+        border: 1px solid #1a1a1a;
+    }
+    .stat-mini .num { font-family: Georgia, serif; font-size: 1.3rem; }
+    .stat-mini .lbl { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: #555; margin-top: 2px; }
+    .stat-mini.pendiente .num { color: var(--amarillo); }
+    .stat-mini.aceptado .num { color: #39d353; }
+    .stat-mini.rechazado .num { color: var(--rojo); }
+    .card-footer-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #111;
+    }
+    .fecha-meta { font-size: 0.75rem; color: #555; }
+    .empty-panel {
+        text-align: center;
+        padding: 80px 40px;
+        color: #444;
+        grid-column: 1 / -1;
+    }
+    .empty-panel h2 { font-family: Georgia, serif; font-size: 1.8rem; margin-bottom: 12px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="panel-header">
+    <h1>Panel de<br>Invitados</h1>
+    <p>Gestión de solicitudes — Frontend 1</p>
+</div>
+
+{% if fiestas %}
+<div class="fiestas-grid">
+    {% for fiesta in fiestas %}
+    {% with pendientes=fiesta.invitado_set.all|dictsort:"estado" %}
+    <div class="fiesta-card">
+        <div class="encabezado">
+            <h2>{{ fiesta.nombre }}</h2>
+            {% with n_pendientes=fiesta.invitado_set.all|length %}
+            {% if n_pendientes > 0 %}
+            <span class="contador-pendientes">{{ n_pendientes }}</span>
+            {% endif %}
+            {% endwith %}
+        </div>
+
+        <div style="font-size:0.72rem;color:#555;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:12px;">
+            {{ fiesta.ciudad }} · {{ fiesta.get_tipo_lugar_display }}
+        </div>
+
+        <div class="fiesta-stats">
+            <div class="stat-mini pendiente">
+                <div class="num">
+                    {% with cnt=fiesta.invitado_set.all %}
+                    {{ cnt|length }}
+                    {% endwith %}
+                </div>
+                <div class="lbl">Total</div>
+            </div>
+            <div class="stat-mini aceptado">
+                <div class="num">{{ fiesta.invitados_aceptados }}</div>
+                <div class="lbl">Aceptados</div>
+            </div>
+            <div class="stat-mini">
+                <div class="num" style="color:var(--blanco);">{{ fiesta.cupos_disponibles }}</div>
+                <div class="lbl">Cupos</div>
+            </div>
+        </div>
+
+        <div class="card-footer-panel">
+            <span class="fecha-meta">📅 {{ fiesta.fecha_hora|date:"d M Y" }}</span>
+            <div style="display:flex;gap:8px;">
+                <a href="{% url 'invitados:gestionar' fiesta.pk %}" class="btn btn-verde" style="font-size:0.72rem;padding:8px 14px;">
+                    Gestionar →
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+</div>
+{% else %}
+<div class="fiestas-grid">
+    <div class="empty-panel">
+        <h2>Sin fiestas aún</h2>
+        <p style="margin-bottom:24px;">Crea una fiesta para comenzar a gestionar invitados.</p>
+        <a href="{% url 'fiestas:crear' %}" class="btn btn-rojo">+ Crear Fiesta</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

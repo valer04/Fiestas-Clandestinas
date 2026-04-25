@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}Localizador de Fiestas{% endblock %}
+
+{% block extra_head %}
+<style>
+    .localizador-layout { display: grid; grid-template-columns: 360px 1fr; height: calc(100vh - 53px); }
+    .loc-sidebar {
+        border-right: 1px solid #1a1a1a;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: #050505;
+    }
+    .loc-sidebar-header { padding: 24px 24px 16px; border-bottom: 1px solid #111; }
+    .loc-sidebar-header h1 {
+        font-family: Georgia, serif;
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+    .loc-sidebar-header p { font-size: 0.72rem; color: #555; letter-spacing: 0.1em; text-transform: uppercase; }
+    .buscar-form { padding: 16px 24px; border-bottom: 1px solid #111; display: flex; gap: 8px; }
+    .buscar-input {
+        flex: 1;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        color: var(--blanco);
+        padding: 9px 12px;
+        font-family: var(--font-cuerpo);
+        font-size: 0.82rem;
+        outline: none;
+    }
+    .buscar-input:focus { border-color: var(--rojo); }
+    .fiestas-lista { flex: 1; overflow-y: auto; }
+    .fiesta-item {
+        padding: 16px 24px;
+        border-bottom: 1px solid #111;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .fiesta-item:hover { background: #0f0f0f; }
+    .fiesta-item.selected { background: #111; border-left: 3px solid var(--rojo); }
+    .fiesta-item .fi-nombre { font-family: Georgia, serif; font-size: 0.95rem; margin-bottom: 4px; }
+    .fiesta-item .fi-meta { font-size: 0.72rem; color: #666; line-height: 1.7; }
+    .cupo-mini { display: inline-block; padding: 1px 6px; font-size: 0.65rem; border: 1px solid; margin-left: 6px; }
+    .cupo-ok { color: #39d353; border-color: #39d353; }
+    .cupo-llena { color: var(--amarillo); border-color: var(--amarillo); }
+    .loc-mapa {
+        position: relative;
+        background: #0a0a0a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .mapa-placeholder {
+        text-align: center;
+        color: #333;
+    }
+    .mapa-placeholder h2 { font-family: Georgia, serif; font-size: 1.5rem; margin-bottom: 8px; }
+    .mapa-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+    .pin {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        cursor: pointer;
+    }
+    .pin-dot {
+        width: 12px;
+        height: 12px;
+        background: var(--rojo);
+        border-radius: 50%;
+        border: 2px solid #0a0a0a;
+        box-shadow: 0 0 0 3px rgba(200,16,46,0.3);
+        transition: transform 0.15s;
+    }
+    .pin:hover .pin-dot { transform: scale(1.4); }
+    .pin-label {
+        position: absolute;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #111;
+        border: 1px solid #2a2a2a;
+        padding: 4px 8px;
+        font-size: 0.68rem;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+    .pin:hover .pin-label { opacity: 1; }
+    .revelar-banner {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #0d0d0d;
+        border: 1px solid #2a2a2a;
+        padding: 14px 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-size: 0.8rem;
+        color: #888;
+        white-space: nowrap;
+    }
+    @media (max-width: 768px) { .localizador-layout { grid-template-columns: 1fr; } .loc-mapa { display: none; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="localizador-layout">
+    <!-- SIDEBAR -->
+    <div class="loc-sidebar">
+        <div class="loc-sidebar-header">
+            <h1>Localizador</h1>
+            <p>Frontend 2 — Mapa de fiestas</p>
+        </div>
+
+        <form class="buscar-form" method="get" action="{% url 'localizador:buscar' %}">
+            <input class="buscar-input" type="text" name="q" placeholder="Buscar ciudad, fiesta..." value="{{ query|default:'' }}">
+            <button class="btn btn-rojo" style="padding:8px 14px;font-size:0.75rem;" type="submit">Buscar</button>
+        </form>
+
+        <div class="fiestas-lista">
+            {% for fiesta in fiestas %}
+            <div class="fiesta-item" onclick="selectFiesta({{ fiesta.pk }}, '{{ fiesta.nombre|escapejs }}')">
+                <div class="fi-nombre">
+                    {{ fiesta.nombre }}
+                    {% if fiesta.cupos_disponibles > 0 %}
+                    <span class="cupo-mini cupo-ok">{{ fiesta.cupos_disponibles }} cupos</span>
+                    {% else %}
+                    <span class="cupo-mini cupo-llena">Llena</span>
+                    {% endif %}
+                </div>
+                <div class="fi-meta">
+                    📅 {{ fiesta.fecha_hora|date:"d M Y, H:i" }}<br>
+                    📍 {{ fiesta.ciudad }}, {{ fiesta.departamento }}<br>
+                    {% if fiesta.es_publica %}🔓 {{ fiesta.direccion }}{% else %}🔒 Ubicación privada{% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div style="padding:40px 24px;text-align:center;color:#444;font-size:0.85rem;">
+                No hay fiestas activas en el mapa.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- MAPA -->
+    <div class="loc-mapa">
+        <div class="mapa-grid"></div>
+
+        {% for fiesta in fiestas %}
+        {% if fiesta.es_publica and fiesta.latitud and fiesta.longitud %}
+        <div class="pin" id="pin-{{ fiesta.pk }}"
+            style="left:{{ fiesta.longitud|add:'74.5'|floatformat:2 }}%;
+                   top:{{ fiesta.latitud|add:'-3.5'|floatformat:2 }}%;">
+            <div class="pin-label">{{ fiesta.nombre }}</div>
+            <div class="pin-dot"></div>
+        </div>
+        {% endif %}
+        {% endfor %}
+
+        <div class="mapa-placeholder">
+            <div style="font-size:3rem;margin-bottom:12px;">🗺️</div>
+            <h2>Mapa de Fiestas</h2>
+            <p style="font-size:0.78rem;color:#444;">
+                Las fiestas públicas aparecen marcadas.<br>
+                Las privadas requieren código de acceso.
+            </p>
+        </div>
+
+        <div class="revelar-banner">
+            <span>🔒 ¿Tienes un código secreto?</span>
+            <a href="{% url 'localizador:revelar' %}" class="btn btn-amarillo" style="font-size:0.75rem;padding:8px 16px;">
+                Revelar Ubicación →
+            </a>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+function selectFiesta(id, nombre) {
+    document.querySelectorAll('.fiesta-item').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    const pin = document.getElementById('pin-' + id);
+    if (pin) {
+        pin.querySelector('.pin-dot').style.transform = 'scale(1.8)';
+        setTimeout(() => pin.querySelector('.pin-dot').style.transform = '', 1000);
+    }
+}
+</script>
+{% endblock %}
+{% endblock %}

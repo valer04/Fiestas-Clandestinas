@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Revelar Ubicación{% endblock %}
+
+{% block extra_head %}
+<style>
+    .revelar-wrap {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 80px 24px;
+        text-align: center;
+    }
+    .revelar-wrap .icono { font-size: 3rem; margin-bottom: 24px; }
+    .revelar-wrap h1 {
+        font-family: Georgia, serif;
+        font-size: 2.5rem;
+        margin-bottom: 8px;
+    }
+    .revelar-wrap p { color: #555; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 40px; }
+    .codigo-input-wrap { position: relative; margin-bottom: 16px; }
+    .codigo-input {
+        width: 100%;
+        background: #0d0d0d;
+        border: 1px solid #2a2a2a;
+        border-bottom: 2px solid var(--amarillo);
+        color: var(--amarillo);
+        padding: 18px 20px;
+        font-family: Georgia, serif;
+        font-size: 1.8rem;
+        letter-spacing: 0.4em;
+        text-align: center;
+        text-transform: uppercase;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .codigo-input:focus { border-color: var(--amarillo); background: #0f0f0f; }
+    .hint-codigo { font-size: 0.72rem; color: #444; margin-bottom: 28px; }
+    .resultado-box {
+        background: #0d0d0d;
+        border: 1px solid #2a2a2a;
+        padding: 28px;
+        margin-top: 32px;
+        text-align: left;
+        display: none;
+    }
+    .resultado-box.visible { display: block; }
+    .resultado-box .ubicacion-label {
+        font-size: 0.68rem;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        margin-bottom: 8px;
+    }
+    .resultado-box .ubicacion-dir {
+        font-family: Georgia, serif;
+        font-size: 1.3rem;
+        color: var(--blanco);
+        margin-bottom: 16px;
+    }
+    .resultado-box .fiesta-nombre {
+        font-size: 0.82rem;
+        color: #888;
+        padding-top: 16px;
+        border-top: 1px solid #1a1a1a;
+    }
+    .error-box {
+        color: var(--rojo);
+        font-size: 0.82rem;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid rgba(200,16,46,0.3);
+        background: rgba(200,16,46,0.05);
+        display: none;
+    }
+    .error-box.visible { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="revelar-wrap">
+    <div class="icono">🔐</div>
+    <h1>Revelar<br>Ubicación</h1>
+    <p>Código de acceso requerido</p>
+
+    <form method="get" action="{% url 'localizador:revelar' %}" id="reveal-form">
+        <div class="codigo-input-wrap">
+            <input
+                class="codigo-input"
+                type="text"
+                name="c"
+                id="codigo"
+                placeholder="XXXXXX"
+                maxlength="10"
+                value="{{ codigo|default:'' }}"
+                autocomplete="off"
+                autofocus
+            >
+        </div>
+        <div class="hint-codigo">El código te lo dio el organizador o lo encontraste en la invitación.</div>
+        <button type="submit" class="btn btn-amarillo" style="width:100%;padding:14px;font-size:0.9rem;">
+            Revelar → 
+        </button>
+    </form>
+
+    {% if error %}
+    <div class="error-box visible">
+        ⚠ {{ error }}
+    </div>
+    {% endif %}
+
+    {% if fiesta %}
+    <div class="resultado-box visible">
+        <div class="ubicacion-label">📍 Ubicación revelada</div>
+        <div class="ubicacion-dir">{{ fiesta.direccion }}</div>
+        <div style="font-size:0.8rem;color:#666;margin-bottom:12px;">
+            {{ fiesta.ciudad }}, {{ fiesta.departamento }}
+            {% if fiesta.latitud and fiesta.longitud %}
+            <br>
+            <a href="https://maps.google.com/?q={{ fiesta.latitud }},{{ fiesta.longitud }}"
+               target="_blank" style="color:var(--amarillo);font-size:0.75rem;">
+                Abrir en Google Maps →
+            </a>
+            {% endif %}
+        </div>
+        <div class="fiesta-nombre">
+            🎉 <strong>{{ fiesta.nombre }}</strong><br>
+            📅 {{ fiesta.fecha_hora|date:"d M Y, H:i" }}<br>
+            👤 Organiza: {{ fiesta.organizador }}
+            {% if fiesta.contacto %} · {{ fiesta.contacto }}{% endif %}
+        </div>
+        <div style="margin-top:16px;">
+            <a href="{% url 'invitados:formulario_solicitud' fiesta.pk %}" class="btn btn-verde" style="font-size:0.75rem;padding:9px 16px;">
+                Solicitar Invitación →
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
