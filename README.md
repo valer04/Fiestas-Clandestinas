@@ -20,7 +20,9 @@ Rutas principales:
 
 
 Requisitos
-
+- Python 3.10+ instalado
+- pip
+- Abrir en http://127.0.0.1:8000
 
 Instalacion/Setup
 #!/bin/bash
